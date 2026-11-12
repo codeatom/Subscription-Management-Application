@@ -9,11 +9,7 @@ public class SubscriptionEvent {
     private final String description;
     private final LocalDateTime timestamp;
 
-    public SubscriptionEvent(
-            int subscriberId,
-            String eventType,
-            String description
-    ) {
+    public SubscriptionEvent(int subscriberId, String eventType, String description) {
         this.subscriberId = subscriberId;
         this.eventType = eventType;
         this.description = description;
