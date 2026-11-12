@@ -1,4 +1,3 @@
-
 package app.manager.subscription.model;
 
 import java.time.LocalDateTime;
