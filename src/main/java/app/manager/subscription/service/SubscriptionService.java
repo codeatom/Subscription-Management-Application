@@ -3,15 +3,11 @@ package app.manager.subscription.service;
 
 import app.manager.subscription.exception.InvalidSubscriptionException;
 import app.manager.subscription.exception.SubscriberNotFoundException;
-import app.manager.subscription.model.Plan;
-import app.manager.subscription.model.Subscriber;
-import app.manager.subscription.model.SubscriptionEvent;
-import app.manager.subscription.model.SubscriptionStatus;
+import app.manager.subscription.model.*;
 import app.manager.subscription.repository.SubscriberRepository;
 import app.manager.subscription.repository.SubscriptionEventRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +17,6 @@ public class SubscriptionService {
     private final SubscriberRepository subscriberRepository;
     private final SubscriptionEventRepository eventRepository;
     private final AtomicInteger nextId;
-
 
     public SubscriptionService(
             SubscriberRepository subscriberRepository,
@@ -55,7 +50,7 @@ public class SubscriptionService {
 
         Subscriber subscriber = new Subscriber(nextId.getAndIncrement(), normalizedEmail, Plan.FREE);
         subscriberRepository.save(subscriber);
-        recordEvent(subscriber.getId(), "REGISTERED", "Subscriber registered with FREE plan");
+        recordEvent(subscriber.getId(), SubscriptionEventType.REGISTERED, "Subscriber registered with FREE plan");
 
         return subscriber;
     }
@@ -72,7 +67,7 @@ public class SubscriptionService {
         subscriber.setExpirationDate(LocalDateTime.now().plusMonths(1));
         subscriberRepository.save(subscriber);
 
-        recordEvent(subscriberId, "ACTIVATED", "Subscription activated successfully");
+        recordEvent(subscriberId, SubscriptionEventType.ACTIVATED, "Subscription activated successfully");
     }
 
     // CANCEL SUBSCRIPTION
@@ -85,7 +80,7 @@ public class SubscriptionService {
 
         subscriber.setStatus(SubscriptionStatus.CANCELLED);
         subscriberRepository.save(subscriber);
-        recordEvent(subscriberId, "CANCELLED", "Subscription cancelled");
+        recordEvent(subscriberId, SubscriptionEventType.CANCELLED, "Subscription cancelled");
     }
 
     // RENEW SUBSCRIPTION
@@ -113,7 +108,7 @@ public class SubscriptionService {
         subscriber.setExpirationDate(newExpiration);
         subscriberRepository.save(subscriber);
 
-        recordEvent(subscriberId, "RENEWED", "Subscription renewed for "
+        recordEvent(subscriberId, SubscriptionEventType.RENEWED, "Subscription renewed for "
                 + months + " month(s). New expiration: " + newExpiration);
     }
 
@@ -137,7 +132,7 @@ public class SubscriptionService {
 
         subscriber.setPlan(newPlan);
         subscriberRepository.save(subscriber);
-        recordEvent(subscriberId, "PLAN_UPGRADED", "Plan upgraded from " + currentPlan + " to " + newPlan);
+        recordEvent(subscriberId, SubscriptionEventType.PLAN_UPGRADED, "Plan upgraded from " + currentPlan + " to " + newPlan);
     }
 
     // EXPIRE SUBSCRIPTIONS
@@ -150,7 +145,7 @@ public class SubscriptionService {
                     && subscriber.getExpirationDate() != null && !subscriber.getExpirationDate().isAfter(now)) {
                 subscriber.setStatus(SubscriptionStatus.EXPIRED);
                 subscriberRepository.save(subscriber);
-                recordEvent(subscriber.getId(), "EXPIRED", "Subscription expired on " + subscriber.getExpirationDate());
+                recordEvent(subscriber.getId(), SubscriptionEventType.EXPIRED, "Subscription expired on " + subscriber.getExpirationDate());
             }
         }
     }
@@ -161,7 +156,7 @@ public class SubscriptionService {
     }
 
     // RECORD EVENT
-    private void recordEvent(int subscriberId, String eventType, String description) {
+    private void recordEvent(int subscriberId, SubscriptionEventType eventType, String description) {
         SubscriptionEvent event =
                 new SubscriptionEvent(subscriberId, eventType, description);
 

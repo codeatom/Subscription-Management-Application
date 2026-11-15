@@ -5,11 +5,15 @@ import java.time.LocalDateTime;
 public class SubscriptionEvent {
 
     private final int subscriberId;
-    private final String eventType;
+    private final SubscriptionEventType eventType;
     private final String description;
     private final LocalDateTime timestamp;
 
-    public SubscriptionEvent(int subscriberId, String eventType, String description) {
+    public SubscriptionEvent(
+            int subscriberId,
+            SubscriptionEventType eventType,
+            String description) {
+
         this.subscriberId = subscriberId;
         this.eventType = eventType;
         this.description = description;
@@ -20,7 +24,7 @@ public class SubscriptionEvent {
         return subscriberId;
     }
 
-    public String getEventType() {
+    public SubscriptionEventType getEventType() {
         return eventType;
     }
 

@@ -17,17 +17,20 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import app.manager.subscription.model.SubscriptionEventType;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubscriptionServiceTest {
 
     private SubscriberRepository subscriberRepository;
+    private SubscriptionEventRepository eventRepository;
     private SubscriptionService service;
 
     @BeforeEach
     void setUp() {
         subscriberRepository = new SubscriberInMemoryRepo();
-        SubscriptionEventRepository eventRepository = new SubscriptionEventInMemoryRepo();
+        eventRepository = new SubscriptionEventInMemoryRepo();
         service = new SubscriptionService(subscriberRepository, eventRepository);
     }
 
@@ -380,7 +383,7 @@ class SubscriptionServiceTest {
     void shouldRecordRegistrationEvent() {
         Subscriber subscriber = service.registerSubscriber("alice@example.com");
 
-        List<SubscriptionEvent> events = service.getEvents();
+        List<SubscriptionEvent> events = eventRepository.findAll();
 
         assertEquals(1, events.size());
 
@@ -390,14 +393,15 @@ class SubscriptionServiceTest {
         );
 
         assertEquals(
-                "REGISTERED",
+                SubscriptionEventType.REGISTERED,
                 events.get(0).getEventType()
         );
     }
 
     @Test
     void shouldRecordAllSubscriptionEvents() {
-        Subscriber subscriber = service.registerSubscriber("alice@example.com");
+        Subscriber subscriber =
+                service.registerSubscriber("alice@example.com");
 
         service.activateSubscription(subscriber.getId());
 
@@ -407,20 +411,21 @@ class SubscriptionServiceTest {
 
         service.cancelSubscription(subscriber.getId());
 
-        List<SubscriptionEvent> events = service.getEvents();
+        List<SubscriptionEvent> events = eventRepository.findAll();
 
         assertEquals(5, events.size());
 
-        assertEquals("REGISTERED", events.get(0).getEventType());
-        assertEquals("ACTIVATED", events.get(1).getEventType());
-        assertEquals("PLAN_UPGRADED", events.get(2).getEventType());
-        assertEquals("RENEWED", events.get(3).getEventType());
-        assertEquals("CANCELLED", events.get(4).getEventType());
+        assertEquals(SubscriptionEventType.REGISTERED, events.get(0).getEventType());
+        assertEquals(SubscriptionEventType.ACTIVATED, events.get(1).getEventType());
+        assertEquals(SubscriptionEventType.PLAN_UPGRADED, events.get(2).getEventType());
+        assertEquals(SubscriptionEventType.RENEWED, events.get(3).getEventType());
+        assertEquals(SubscriptionEventType.CANCELLED, events.get(4).getEventType());
     }
 
     @Test
     void shouldReturnEventsForSpecificSubscriber() {
-        Subscriber first = service.registerSubscriber("alice@example.com");
+        Subscriber first =
+                service.registerSubscriber("alice@example.com");
 
         Subscriber second =
                 service.registerSubscriber("bob@example.com");
