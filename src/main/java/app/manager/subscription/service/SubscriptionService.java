@@ -8,6 +8,7 @@ import app.manager.subscription.model.Subscriber;
 import app.manager.subscription.model.SubscriptionEvent;
 import app.manager.subscription.model.SubscriptionStatus;
 import app.manager.subscription.repository.SubscriberRepository;
+import app.manager.subscription.repository.SubscriptionEventRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,11 +19,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SubscriptionService {
 
     private final SubscriberRepository subscriberRepository;
-    private final List<SubscriptionEvent> events = new ArrayList<>();
+    private final SubscriptionEventRepository eventRepository;
     private final AtomicInteger nextId;
 
-    public SubscriptionService(SubscriberRepository subscriberRepository) {
-        this.subscriberRepository = Objects.requireNonNull(subscriberRepository);
+
+    public SubscriptionService(
+            SubscriberRepository subscriberRepository,
+            SubscriptionEventRepository eventRepository) {
+
+        this.subscriberRepository =
+                Objects.requireNonNull(subscriberRepository);
+        this.eventRepository =
+                Objects.requireNonNull(eventRepository);
 
         int maxId = subscriberRepository.findAll()
                 .stream()
@@ -154,17 +162,19 @@ public class SubscriptionService {
 
     // RECORD EVENT
     private void recordEvent(int subscriberId, String eventType, String description) {
-        SubscriptionEvent event = new SubscriptionEvent(subscriberId, eventType, description);
-        events.add(event);
+        SubscriptionEvent event =
+                new SubscriptionEvent(subscriberId, eventType, description);
+
+        eventRepository.save(event);
     }
 
     // GET ALL EVENTS
     public List<SubscriptionEvent> getEvents() {
-        return List.copyOf(events);
+        return eventRepository.findAll();
     }
 
     // GET EVENTS FOR ONE SUBSCRIBER
     public List<SubscriptionEvent> getEventsBySubscriber(int subscriberId) {
-        return events.stream().filter(event -> event.getSubscriberId() == subscriberId).toList();
+        return eventRepository.findBySubscriberId(subscriberId);
     }
 }

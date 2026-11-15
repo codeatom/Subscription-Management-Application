@@ -8,7 +8,8 @@ import app.manager.subscription.model.SubscriptionEvent;
 import app.manager.subscription.model.SubscriptionStatus;
 import app.manager.subscription.repository.SubscriberInMemoryRepo;
 import app.manager.subscription.repository.SubscriberRepository;
-
+import app.manager.subscription.repository.SubscriptionEventInMemoryRepo;
+import app.manager.subscription.repository.SubscriptionEventRepository;
 import app.manager.subscription.service.SubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,13 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SubscriptionServiceTest {
 
-    private SubscriberRepository repository;
+    private SubscriberRepository subscriberRepository;
     private SubscriptionService service;
 
     @BeforeEach
     void setUp() {
-        repository = new SubscriberInMemoryRepo();
-        service = new SubscriptionService(repository);
+        subscriberRepository = new SubscriberInMemoryRepo();
+        SubscriptionEventRepository eventRepository = new SubscriptionEventInMemoryRepo();
+        service = new SubscriptionService(subscriberRepository, eventRepository);
     }
 
     // ==========================================
@@ -43,7 +45,7 @@ class SubscriptionServiceTest {
         assertEquals(Plan.FREE, subscriber.getPlan());
         assertEquals(SubscriptionStatus.PENDING, subscriber.getStatus());
 
-        assertTrue(repository.findById(1).isPresent());
+        assertTrue(subscriberRepository.findById(1).isPresent());
     }
 
     @Test
@@ -65,7 +67,7 @@ class SubscriptionServiceTest {
                 () -> service.registerSubscriber("ALICE@example.com")
         );
 
-        assertEquals(1, repository.count());
+        assertEquals(1, subscriberRepository.count());
     }
 
     @Test
@@ -102,7 +104,7 @@ class SubscriptionServiceTest {
 
         service.activateSubscription(subscriber.getId());
 
-        Subscriber updated = repository.findById(subscriber.getId()).orElseThrow();
+        Subscriber updated = subscriberRepository.findById(subscriber.getId()).orElseThrow();
 
         assertEquals(
                 SubscriptionStatus.ACTIVE,
@@ -145,7 +147,7 @@ class SubscriptionServiceTest {
         service.activateSubscription(subscriber.getId());
         service.cancelSubscription(subscriber.getId());
 
-        Subscriber updated = repository.findById(subscriber.getId()).orElseThrow();
+        Subscriber updated = subscriberRepository.findById(subscriber.getId()).orElseThrow();
 
         assertEquals(
                 SubscriptionStatus.CANCELLED,
@@ -161,7 +163,7 @@ class SubscriptionServiceTest {
 
         assertEquals(
                 SubscriptionStatus.CANCELLED,
-                repository.findById(subscriber.getId())
+                subscriberRepository.findById(subscriber.getId())
                         .orElseThrow()
                         .getStatus()
         );
@@ -189,15 +191,15 @@ class SubscriptionServiceTest {
 
         service.activateSubscription(subscriber.getId());
 
-        LocalDateTime oldExpiration = repository.findById(subscriber.getId())
-                        .orElseThrow()
-                        .getExpirationDate();
+        LocalDateTime oldExpiration = subscriberRepository.findById(subscriber.getId())
+                .orElseThrow()
+                .getExpirationDate();
 
         service.renewSubscription(subscriber.getId(), 3);
 
-        LocalDateTime newExpiration = repository.findById(subscriber.getId())
-                        .orElseThrow()
-                        .getExpirationDate();
+        LocalDateTime newExpiration = subscriberRepository.findById(subscriber.getId())
+                .orElseThrow()
+                .getExpirationDate();
 
         assertEquals(
                 oldExpiration.plusMonths(3),
@@ -251,7 +253,7 @@ class SubscriptionServiceTest {
 
         service.upgradePlan(subscriber.getId(), Plan.BASIC);
 
-        Subscriber updated = repository.findById(subscriber.getId()).orElseThrow();
+        Subscriber updated = subscriberRepository.findById(subscriber.getId()).orElseThrow();
 
         assertEquals(
                 Plan.BASIC,
@@ -270,7 +272,7 @@ class SubscriptionServiceTest {
 
         assertEquals(
                 Plan.PRO,
-                repository.findById(subscriber.getId())
+                subscriberRepository.findById(subscriber.getId())
                         .orElseThrow()
                         .getPlan()
         );
@@ -324,15 +326,15 @@ class SubscriptionServiceTest {
 
         service.activateSubscription(subscriber.getId());
 
-        subscriber = repository.findById(subscriber.getId()).orElseThrow();
+        subscriber = subscriberRepository.findById(subscriber.getId()).orElseThrow();
 
         subscriber.setExpirationDate(LocalDateTime.now().minusDays(1));
 
-        repository.save(subscriber);
+        subscriberRepository.save(subscriber);
 
         service.expireSubscriptions();
 
-        Subscriber expired = repository.findById(subscriber.getId()).orElseThrow();
+        Subscriber expired = subscriberRepository.findById(subscriber.getId()).orElseThrow();
 
         assertEquals(
                 SubscriptionStatus.EXPIRED,
@@ -350,7 +352,7 @@ class SubscriptionServiceTest {
 
         assertEquals(
                 SubscriptionStatus.ACTIVE,
-                repository.findById(subscriber.getId())
+                subscriberRepository.findById(subscriber.getId())
                         .orElseThrow()
                         .getStatus()
         );
@@ -364,7 +366,7 @@ class SubscriptionServiceTest {
 
         assertEquals(
                 SubscriptionStatus.PENDING,
-                repository.findById(subscriber.getId())
+                subscriberRepository.findById(subscriber.getId())
                         .orElseThrow()
                         .getStatus()
         );

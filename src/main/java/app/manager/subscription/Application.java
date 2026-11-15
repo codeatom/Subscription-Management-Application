@@ -8,6 +8,8 @@ import app.manager.subscription.model.SubscriptionEvent;
 import app.manager.subscription.processor.SubscriberProcessor;
 import app.manager.subscription.repository.SubscriberInMemoryRepo;
 import app.manager.subscription.repository.SubscriberRepository;
+import app.manager.subscription.repository.SubscriptionEventInMemoryRepo;
+import app.manager.subscription.repository.SubscriptionEventRepository;
 import app.manager.subscription.service.SubscriptionService;
 
 import java.util.List;
@@ -18,18 +20,24 @@ public class Application {
     private final SubscriptionService subscriptionService;
 
     // CONSTRUCTOR INJECTION
-    public Application(SubscriberRepository subscriberRepository, SubscriberProcessor subscriberProcessor) {
+    public Application(SubscriberRepository subscriberRepository,
+                       SubscriptionEventRepository eventRepository,
+                       SubscriberProcessor subscriberProcessor) {
         this.subscriberRepository = subscriberRepository;
         this.subscriberProcessor = subscriberProcessor;
 
-        this.subscriptionService = new SubscriptionService(subscriberRepository);
+        this.subscriptionService =
+                new SubscriptionService(subscriberRepository, eventRepository);
     }
 
     // APPLICATION ENTRY POINT
     public static void main(String[] args) {
         SubscriberRepository repository = new SubscriberInMemoryRepo();
+        SubscriptionEventRepository eventRepository = new SubscriptionEventInMemoryRepo();
+
         SubscriberProcessor processor = new SubscriberProcessor();
-        Application application = new Application(repository, processor);
+        Application application = new Application(repository, eventRepository, processor);
+
         application.run();
     }
 
